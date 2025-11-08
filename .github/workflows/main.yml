@@ -1,0 +1,42 @@
+name: Build N60Pro
+
+on:
+  workflow_dispatch:  # 允许手动触发
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install build dependencies
+      run: |
+        sudo apt update
+        sudo apt install -y build-essential ccache ecj fastjar file g++ gawk \
+        gettext git java-propose-classpath libelf-dev libncurses5-dev \
+        libncursesw5-dev libssl-dev python python2.7-dev python3 unzip wget \
+        python3-distutils python3-setuptools python3-dev rsync subversion \
+        swig time
+    - name: Update & install feeds
+      run: |
+        ./scripts/feeds update -a
+        ./scripts/feeds install -a
+    - name: Configure target
+      run: |
+        echo "CONFIG_TARGET_ramips=y"                 > .config
+        echo "CONFIG_TARGET_ramips_mt7621=y"         >> .config
+        echo "CONFIG_TARGET_ramips_mt7621_DEVICE_netis_n60pro=y" >> .config
+        echo "CONFIG_PACKAGE_kmod-tcp-bbr=y"         >> .config
+        echo "CONFIG_PACKAGE_kmod-sch-cake=y"        >> .config
+        echo "CONFIG_PACKAGE_kmod-sch-fec=y"         >> .config
+        echo "CONFIG_PACKAGE_tc-full=y"              >> .config
+        echo "CONFIG_PACKAGE_luci=y"                 >> .config
+        make defconfig
+    - name: Download dl & build
+      run: |
+        make download -j$(nproc)
+        make -j$(nproc) V=s
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: lede-n60pro
+        path: bin/targets/ramips/mt7621/*n60pro*sysupgrade.bin
