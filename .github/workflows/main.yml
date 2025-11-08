@@ -34,6 +34,9 @@ jobs:
       run: |
         make download -j$(nproc)
         make -j$(nproc) V=s
+
+    - name: List files
+      run: ls -l bin/targets/ramips/mt7621/
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
